@@ -14,6 +14,8 @@ import { ChainWithAttributes, NETWORKS_EXTRA_DATA } from "~~/utils/scaffold-eth"
 type GlobalState = {
   targetNetwork: ChainWithAttributes;
   setTargetNetwork: (newTargetNetwork: ChainWithAttributes) => void;
+  hasAccessToStream: boolean;
+  setHasAccessToStream: (hasAccess: boolean) => void;
 };
 
 export const useGlobalState = create<GlobalState>(set => ({
@@ -22,4 +24,8 @@ export const useGlobalState = create<GlobalState>(set => ({
     ...NETWORKS_EXTRA_DATA[scaffoldConfig.targetNetworks[0].id],
   },
   setTargetNetwork: (newTargetNetwork: ChainWithAttributes) => set(() => ({ targetNetwork: newTargetNetwork })),
+
+  // Check if the user has access to a given stream
+  hasAccessToStream: false,
+  setHasAccessToStream: (hasAccess: boolean) => set(() => ({ hasAccessToStream: hasAccess })),
 }));

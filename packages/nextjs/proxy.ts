@@ -29,12 +29,18 @@ const paywall = createPaywall()
 
 export const proxy = paymentProxy(
   {
-    "/api/payment/builder": {
+    "/api/stream/access": {
       accepts: [
         {
           scheme: "exact",
           price: "$0.01",
           network: "eip155:84532",
+          payTo,
+        },
+        {
+          scheme: "exact",
+          price: "$0.01",
+          network: "eip155:8453",
           payTo,
         },
       ],
@@ -57,5 +63,5 @@ export const proxy = paymentProxy(
 
 // Configure which paths the middleware should run on
 export const config = {
-  matcher: ["/api/payment/:path*", "/payment/:path*"],
+  matcher: ["/api/stream/access/:path*"],
 };

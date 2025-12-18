@@ -118,7 +118,7 @@ const facilitator = new x402Facilitator()
 // Register EVM and SVM schemes using the new register helpers
 registerExactEvmScheme(facilitator, {
   signer: evmSigner,
-  networks: "eip155:84532", // Base Sepolia
+  networks: ["eip155:84532", "eip155:8453"], // Base Sepolia, Base Mainnet
   deployERC4337WithEIP6492: true,
 });
 registerExactSvmScheme(facilitator, {
