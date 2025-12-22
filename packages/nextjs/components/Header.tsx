@@ -23,7 +23,7 @@ export const menuLinks: HeaderMenuLink[] = [
   },
   {
     label: "Streams",
-    href: "/payment/builder",
+    href: "/streams/demo",
     icon: <CreditCardIcon className="h-4 w-4" />,
   },
 ];

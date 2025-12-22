@@ -45,16 +45,6 @@ export const proxy = paymentProxy(
         },
       ],
     },
-    "/payment/builder": {
-      accepts: [
-        {
-          scheme: "exact",
-          price: "$0.01",
-          network: "eip155:84532",
-          payTo,
-        },
-      ],
-    },
   },
   server,
   undefined,

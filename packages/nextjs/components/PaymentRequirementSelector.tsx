@@ -14,6 +14,13 @@ interface PaymentRequirementSelectorProps {
   onSelect: (requirement: PaymentRequirements) => void;
 }
 
+interface TokenInfo {
+  name?: string;
+  symbol?: string;
+  decimals?: number;
+  balance?: string;
+}
+
 /**
  * Extracts chain ID from network string (e.g., "eip155:1" -> 1)
  */
@@ -149,7 +156,7 @@ export default function PaymentRequirementSelector({
   }
 
   // Map token data back to requirements
-  const getTokenInfo = (requirement: PaymentRequirements, index: number) => {
+  const getTokenInfo = (requirement: PaymentRequirements, index: number): TokenInfo => {
     if (!tokenData || tokenData.length === 0) {
       return {
         name: undefined,
@@ -188,6 +195,28 @@ export default function PaymentRequirementSelector({
     };
   };
 
+  // Check if balance is sufficient for a payment requirement
+  const isBalanceSufficient = (requirement: PaymentRequirements, tokenInfo: TokenInfo): boolean => {
+    // If balance or decimals are not loaded yet, assume sufficient (don't block during loading)
+    if (
+      !tokenInfo.balance ||
+      tokenInfo.balance === undefined ||
+      !tokenInfo.decimals ||
+      tokenInfo.decimals === undefined
+    ) {
+      return true; // Allow selection while loading
+    }
+
+    try {
+      // @ts-expect-error - amount property exists at runtime but may not be in type definition
+      const requiredAmount = requirement.amount || requirement.value || "0";
+      const requiredAmountFormatted = formatUnits(BigInt(requiredAmount), tokenInfo.decimals);
+      return Number.parseFloat(tokenInfo.balance) >= Number.parseFloat(requiredAmountFormatted);
+    } catch {
+      return true; // Default to allowing if we can't parse
+    }
+  };
+
   return (
     <div className="space-y-2">
       <h3 className="font-semibold text-sm mb-3">Select Payment Option</h3>
@@ -200,27 +229,37 @@ export default function PaymentRequirementSelector({
         const chainId = extractChainId(requirement.network || "");
         const tokenInfo = getTokenInfo(requirement, index);
         const isSelected = selectedRequirement === requirement;
+        const hasSufficientBalance = isBalanceSufficient(requirement, tokenInfo);
+        const canSelect = !isLoading && hasSufficientBalance;
 
         // Format amount with fetched decimals
         let amount: string | undefined;
         if (tokenInfo.decimals !== undefined) {
           try {
-            // @ts-expect-error - value property exists at runtime but may not be in type definition
-            const value = requirement.value || requirement.amount || "0";
+            // @ts-expect-error - amount property exists at runtime but may not be in type definition
+            const value = requirement.amount || requirement.value || "0";
             amount = formatUnits(BigInt(value), tokenInfo.decimals as number);
           } catch {
-            // @ts-expect-error - value property exists at runtime but may not be in type definition
-            amount = String(requirement.value || requirement.amount || "0");
+            // @ts-expect-error - amount property exists at runtime but may not be in type definition
+            amount = String(requirement.amount || requirement.value || "0");
           }
         }
 
         return (
           <button
             key={index}
-            onClick={() => onSelect(requirement)}
-            disabled={isLoading}
+            onClick={() => {
+              if (canSelect) {
+                onSelect(requirement);
+              }
+            }}
+            disabled={!canSelect}
             className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-              isSelected ? "border-primary bg-primary/10" : "border-base-300 hover:border-primary/50"
+              !canSelect && !isLoading
+                ? "border-error bg-error/10 cursor-not-allowed"
+                : isSelected
+                  ? "border-primary bg-primary/10"
+                  : "border-base-300 hover:border-primary/50"
             } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <div className="flex items-center justify-between">
@@ -251,15 +290,12 @@ export default function PaymentRequirementSelector({
                     {tokenInfo.balance !== undefined && (
                       <div>
                         <span className="opacity-70">Your balance: </span>
-                        <span
-                          className={
-                            Number.parseFloat(tokenInfo.balance) >= Number.parseFloat(amount)
-                              ? "text-success"
-                              : "text-error"
-                          }
-                        >
+                        <span className={hasSufficientBalance ? "text-success" : "text-error"}>
                           {tokenInfo.balance} {tokenInfo.symbol}
                         </span>
+                        {!hasSufficientBalance && (
+                          <span className="text-error text-xs ml-2">(Insufficient balance)</span>
+                        )}
                       </div>
                     )}
                   </div>
